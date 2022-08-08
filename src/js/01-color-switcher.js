@@ -1,6 +1,7 @@
-const startBtnRef = document.querySelector('[data-start]');
-const stopBtnRef = document.querySelector('[data-stop]');
-
+const refs = {
+  startBtn: document.querySelector('[data-start]'),
+  stopBtn: document.querySelector('[data-stop]'),
+};
 let changeColorIntervalId = null;
 
 function getRandomHexColor() {
@@ -20,12 +21,11 @@ const stopBtnClickHandler = () => {
 };
 
 const toggleBtnAccessibility = () => {
-  startBtnRef.toggleAttribute('disabled');
-  stopBtnRef.toggleAttribute('disabled');
+  refs.startBtn.toggleAttribute('disabled');
+  refs.stopBtn.toggleAttribute('disabled');
 };
 
-stopBtnRef.disabled = true;
+refs.stopBtn.disabled = true;
 
-startBtnRef.addEventListener('click', startBtnClickHandler);
-
-stopBtnRef.addEventListener('click', stopBtnClickHandler);
+refs.startBtn.addEventListener('click', startBtnClickHandler);
+refs.stopBtn.addEventListener('click', stopBtnClickHandler);
