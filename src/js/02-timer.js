@@ -1,8 +1,10 @@
 import flatpickr from 'flatpickr';
 import 'flatpickr/dist/flatpickr.min.css';
+import { Notify } from 'notiflix/build/notiflix-notify-aio';
 
 const refs = {
   startBtn: document.querySelector('[data-start]'),
+  dateInput: document.querySelector('#datetime-picker'),
   daysValue: document.querySelector('[data-days]'),
   hoursValue: document.querySelector('[data-hours]'),
   minutesValue: document.querySelector('[data-minutes]'),
@@ -14,21 +16,15 @@ const options = {
   time_24hr: true,
   defaultDate: new Date(),
   minuteIncrement: 1,
-  onOpen() {
-    if (timer.isStarted) this.close();
-  },
   onClose(selectedDates) {
-    if (timer.isStarted) return;
-
     timer.selectedDate = selectedDates[0];
 
-    const isValidDate = timer.getCountDownTime() > 0;
-    refs.startBtn.disabled = !isValidDate;
-
-    if (!isValidDate) {
-      window.alert('Please choose a date in the future');
+    if (timer.getCountDownTime() <= 0) {
+      Notify.failure('Please choose a date in the future');
       return;
     }
+
+    setRefAccessibility('startBtn', true);
   },
 };
 
@@ -51,37 +47,44 @@ function convertMs(ms) {
   return { days, hours, minutes, seconds };
 }
 
-function updateRefs(decomposedDate) {
-  for (const key of Object.keys(decomposedDate)) {
-    refs[key + 'Value'].textContent = decomposedDate[key];
-  }
+function updateValueRefs(decomposedDate) {
+  for (const key of Object.keys(decomposedDate))
+    refs[key + 'Value'].textContent = addLeadingZero(decomposedDate[key]);
+}
+
+function setRefAccessibility(ref, value) {
+  refs[ref].disabled = !value;
+}
+
+function addLeadingZero(value) {
+  return value.toString().padStart(2, '0');
 }
 
 class Timer {
-  constructor({ getDecomposedDate, updateRefs }) {
-    this.isStarted = false;
+  constructor({ getDecomposedDate, updateValueRefs, setRefAccessibility }) {
     this.intervalId = null;
     this.selectedDate = null;
     this.getDecomposedDate = getDecomposedDate;
-    this.updateRefs = updateRefs;
+    this.updateValueRefs = updateValueRefs;
+    this.setRefAccessibility = setRefAccessibility;
   }
 
   start() {
-    console.log(this);
     this.intervalId = setInterval(() => {
       const countDownTime = this.getCountDownTime();
-      if (countDownTime < 0) {
+
+      if (countDownTime <= 0) {
         clearInterval(this.intervalId);
-        this.isStarted = false;
+        setRefAccessibility('dateInput', true);
         return;
       }
 
-      const decomposedDate = this.getDecomposedDate(this.getCountDownTime());
-      console.log(decomposedDate);
-      this.updateRefs(decomposedDate);
+      const decomposedDate = this.getDecomposedDate(countDownTime);
+      this.updateValueRefs(decomposedDate);
     }, 1000);
-    this.isStarted = true;
-    refs.startBtn.disabled = this.isStarted;
+
+    this.setRefAccessibility('startBtn', false);
+    this.setRefAccessibility('dateInput', false);
   }
 
   getCountDownTime() {
@@ -89,12 +92,14 @@ class Timer {
   }
 }
 
-const timer = new Timer({ getDecomposedDate: convertMs, updateRefs });
+const timer = new Timer({
+  getDecomposedDate: convertMs,
+  updateValueRefs,
+  setRefAccessibility,
+});
 
 flatpickr('#datetime-picker', options);
 
-refs.startBtn.disabled = true;
-refs.startBtn.addEventListener('click', () => {
-  console.log('start');
-  timer.start.call(timer);
-});
+setRefAccessibility('startBtn', false);
+
+refs.startBtn.addEventListener('click', () => timer.start());
