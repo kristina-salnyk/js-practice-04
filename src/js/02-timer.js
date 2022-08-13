@@ -24,7 +24,7 @@ const options = {
       return;
     }
 
-    setRefAccessibility('startBtn', true);
+    timer.onDateSelection();
   },
 };
 
@@ -47,13 +47,9 @@ function convertMs(ms) {
   return { days, hours, minutes, seconds };
 }
 
-function updateValueRefs(decomposedDate) {
+function updateValueFields(decomposedDate) {
   for (const key of Object.keys(decomposedDate))
     refs[key + 'Value'].textContent = addLeadingZero(decomposedDate[key]);
-}
-
-function setRefAccessibility(ref, value) {
-  refs[ref].disabled = !value;
 }
 
 function addLeadingZero(value) {
@@ -61,12 +57,13 @@ function addLeadingZero(value) {
 }
 
 class Timer {
-  constructor({ getDecomposedDate, updateValueRefs, setRefAccessibility }) {
+  constructor({ onDateSelection, onTimeStart, onTimeChange, onTimeOver }) {
     this.intervalId = null;
     this.selectedDate = null;
-    this.getDecomposedDate = getDecomposedDate;
-    this.updateValueRefs = updateValueRefs;
-    this.setRefAccessibility = setRefAccessibility;
+    this.onDateSelection = onDateSelection;
+    this.onTimeStart = onTimeStart;
+    this.onTimeChange = onTimeChange;
+    this.onTimeOver = onTimeOver;
   }
 
   start() {
@@ -74,17 +71,16 @@ class Timer {
       const countDownTime = this.getCountDownTime();
 
       if (countDownTime <= 0) {
+        Notify.success('Time is over');
         clearInterval(this.intervalId);
-        setRefAccessibility('dateInput', true);
+        this.onTimeOver();
         return;
       }
 
-      const decomposedDate = this.getDecomposedDate(countDownTime);
-      this.updateValueRefs(decomposedDate);
+      this.onTimeChange(countDownTime);
     }, 1000);
 
-    this.setRefAccessibility('startBtn', false);
-    this.setRefAccessibility('dateInput', false);
+    this.onTimeStart();
   }
 
   getCountDownTime() {
@@ -92,14 +88,25 @@ class Timer {
   }
 }
 
-const timer = new Timer({
-  getDecomposedDate: convertMs,
-  updateValueRefs,
-  setRefAccessibility,
-});
+const parameters = {
+  onDateSelection: () => {
+    refs.startBtn.disabled = false;
+  },
+  onTimeStart: () => {
+    refs.startBtn.disabled = true;
+    refs.dateInput.disabled = true;
+  },
+  onTimeChange: countDownTime => {
+    updateValueFields(convertMs(countDownTime));
+  },
+  onTimeOver: () => {
+    refs.dateInput.disabled = false;
+  },
+};
+
+const timer = new Timer(parameters);
 
 flatpickr('#datetime-picker', options);
 
-setRefAccessibility('startBtn', false);
-
+refs.startBtn.disabled = true;
 refs.startBtn.addEventListener('click', () => timer.start());
