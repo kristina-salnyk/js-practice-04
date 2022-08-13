@@ -109,4 +109,4 @@ const timer = new Timer(parameters);
 flatpickr('#datetime-picker', options);
 
 refs.startBtn.disabled = true;
-refs.startBtn.addEventListener('click', () => timer.start());
+refs.startBtn.addEventListener('click', timer.start.bind(timer));

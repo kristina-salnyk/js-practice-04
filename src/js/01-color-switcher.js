@@ -2,30 +2,39 @@ const refs = {
   startBtn: document.querySelector('[data-start]'),
   stopBtn: document.querySelector('[data-stop]'),
 };
-let changeColorIntervalId = null;
 
-function getRandomHexColor() {
-  return `#${Math.floor(Math.random() * 16777215).toString(16)}`;
+class ColorSwitcher {
+  constructor(onToggle) {
+    this.changeColorIntervalId = null;
+    this.onToggle = onToggle;
+  }
+
+  start() {
+    this.changeColorIntervalId = setInterval(() => {
+      document.body.style.backgroundColor = this.getRandomHexColor();
+    }, 1000);
+
+    this.onToggle();
+  }
+
+  stop() {
+    clearInterval(this.changeColorIntervalId);
+    this.onToggle();
+  }
+
+  getRandomHexColor() {
+    return `#${Math.floor(Math.random() * 16777215).toString(16)}`;
+  }
 }
 
-const startBtnClickHandler = () => {
-  changeColorIntervalId = setInterval(() => {
-    document.body.style.backgroundColor = getRandomHexColor();
-  }, 1000);
-  toggleBtnAccessibility();
-};
-
-const stopBtnClickHandler = () => {
-  clearInterval(changeColorIntervalId);
-  toggleBtnAccessibility();
-};
-
-const toggleBtnAccessibility = () => {
+function toggleBtnAccessibility() {
   refs.startBtn.toggleAttribute('disabled');
   refs.stopBtn.toggleAttribute('disabled');
-};
+}
+
+const switcher = new ColorSwitcher(toggleBtnAccessibility);
 
 refs.stopBtn.disabled = true;
 
-refs.startBtn.addEventListener('click', startBtnClickHandler);
-refs.stopBtn.addEventListener('click', stopBtnClickHandler);
+refs.startBtn.addEventListener('click', switcher.start.bind(switcher));
+refs.stopBtn.addEventListener('click', switcher.stop.bind(switcher));
